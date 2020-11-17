@@ -6,17 +6,21 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"demoservice/pkg/middleware"
 )
 
 func TestTimeHandler(t *testing.T) {
 	h := NewTimeHandler(10)
-	srv := httptest.NewServer(http.HandlerFunc(h.Handle))
+	srv := httptest.NewServer(http.HandlerFunc(middleware.UserIDMiddleware(h.Handle)))
 
 	client := http.Client{Timeout: time.Millisecond * 10}
 	req, err := http.NewRequest("get", srv.URL+"/time", nil)
 	if err != nil {
 		t.Fatalf("unexpected error in NewRequest: %v", err)
 	}
+
+	req.Header.Add(middleware.UserIDHeader, "42")
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -46,7 +50,7 @@ func TestTimeHandler(t *testing.T) {
 
 func BenchmarkTimeHandler(b *testing.B) {
 	h := NewTimeHandler(10)
-	srv := httptest.NewServer(http.HandlerFunc(h.Handle))
+	srv := httptest.NewServer(http.HandlerFunc(middleware.UserIDMiddleware(h.Handle)))
 
 	client := http.Client{Timeout: time.Millisecond * 100}
 
@@ -55,6 +59,8 @@ func BenchmarkTimeHandler(b *testing.B) {
 		if err != nil {
 			b.Fatalf("unexpected error in NewRequest: %v", err)
 		}
+
+		req.Header.Add(middleware.UserIDHeader, "42")
 
 		resp, err := client.Do(req)
 		if err != nil {

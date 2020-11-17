@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"demoservice/pkg/middleware"
 )
 
 const (
@@ -28,8 +30,31 @@ type TimeStruct struct {
 	Time string
 }
 
+// AuthorizedUserID is the best user
+const AuthorizedUserID = 42
+
+func checkAuthOk(r *http.Request) bool {
+	v := r.Context().Value(middleware.UserIDKey)
+	userID, ok := v.(int)
+	if !ok || userID < 1 {
+		return false
+	}
+
+	if userID == AuthorizedUserID {
+		return true
+	}
+
+	return false
+}
+
 // Handle handles http request
 func (th *TimeHandler) Handle(w http.ResponseWriter, r *http.Request) {
+
+	if !checkAuthOk(r) {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	outTime := time.Now().UTC().Add(time.Hour * time.Duration(th.tzOffset))
 	out := TimeStruct{
 		Date: outTime.Format(dateFormat),

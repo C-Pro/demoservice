@@ -4,18 +4,25 @@ import (
 	"context"
 	"log"
 	"net/http"
+
+	"demoservice/pkg/middleware"
 )
 
 // Run starts our cool service
 func Run(ctx context.Context) error {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Hello, webservice!"))
 	})
 
 	h := NewTimeHandler(10)
-	http.HandleFunc("/time", h.Handle)
+	mux.HandleFunc("/time", h.Handle)
 
-	s := &http.Server{Addr: "0.0.0.0:8080"}
+	s := &http.Server{Addr: "0.0.0.0:8080",
+		Handler: middleware.UserIDMiddleware(mux.ServeHTTP),
+	}
 	ch := make(chan error)
 
 	go func(s *http.Server, ch chan error) {

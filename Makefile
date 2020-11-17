@@ -12,7 +12,6 @@ compile:
 run:
 	go run .
 
-
 docker:
 	docker build -t $(TAG) .
 
