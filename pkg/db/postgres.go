@@ -36,3 +36,8 @@ func Connect(ctx context.Context) (*sql.DB, error) {
 
 	return conn, nil
 }
+
+// GetShortTimeoutContext returns short timeout context and cancellation function
+func GetShortTimeoutContext(ctx context.Context) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(ctx, dbTimeoutShort)
+}

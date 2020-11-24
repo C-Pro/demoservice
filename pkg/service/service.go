@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"log"
 	"net/http"
 
@@ -9,16 +10,20 @@ import (
 )
 
 // Run starts our cool service
-func Run(ctx context.Context) error {
+func Run(ctx context.Context, db *sql.DB) error {
 
 	mux := http.NewServeMux()
+
+	h := NewTimeHandler(10)
+	mux.HandleFunc("/time", h.Handle)
+
+	u := NewUsersService(db)
+	mux.HandleFunc("/users/", u.UsersHandler)
+	mux.HandleFunc("/users", u.CreateUser)
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Hello, webservice!"))
 	})
-
-	h := NewTimeHandler(10)
-	mux.HandleFunc("/time", h.Handle)
 
 	s := &http.Server{Addr: "0.0.0.0:8080",
 		Handler: middleware.UserIDMiddleware(mux.ServeHTTP),

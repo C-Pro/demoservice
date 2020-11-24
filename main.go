@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
-	"demoservice/pkg/service"
 	"log"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
+
+	"demoservice/pkg/db"
+	"demoservice/pkg/service"
 )
 
 func main() {
@@ -19,12 +21,17 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	conn, err := db.Connect(ctx)
+	if err != nil {
+		log.Fatalf("failed to connect to db: %v", err)
+	}
+
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 
 	go func(ctx context.Context) {
 		defer wg.Done()
-		if err := service.Run(ctx); err != nil {
+		if err := service.Run(ctx, conn); err != nil {
 			log.Fatalf("service start failed: %v", err)
 		}
 	}(ctx)

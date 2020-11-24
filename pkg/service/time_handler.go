@@ -65,6 +65,7 @@ func (th *TimeHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("failed to marshal time: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Add("Content-Type", "application/json")
