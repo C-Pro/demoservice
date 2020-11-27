@@ -47,14 +47,18 @@ func (h *Hub) lock(conn *websocket.Conn) {
 	h.mux.Lock()
 	defer h.mux.Unlock()
 
-	h.conns[conn].Lock()
+	if mux, ok := h.conns[conn]; ok {
+		mux.Lock()
+	}
 }
 
 func (h *Hub) unlock(conn *websocket.Conn) {
 	h.mux.Lock()
 	defer h.mux.Unlock()
 
-	h.conns[conn].Unlock()
+	if mux, ok := h.conns[conn]; ok {
+		mux.Unlock()
+	}
 }
 
 // HandleBroadcast handles /broadcast http endpoint
@@ -63,19 +67,13 @@ func (h *Hub) HandleBroadcast(w http.ResponseWriter, r *http.Request) {
 	h.mux.Lock()
 	defer h.mux.Unlock()
 
-	log.Println("got /broadcast")
-
 	for conn, mux := range h.conns {
-		log.Println("/broadcast loop")
 		go func(conn *websocket.Conn, mux *sync.Mutex) {
-			//h.lock(conn)
-			log.Println("/broadcast sending")
+			h.lock(conn)
 			err := conn.WriteMessage(
 				websocket.TextMessage,
 				[]byte("Hi ALL!"))
-			//h.unlock(conn)
-
-			log.Printf("/broadcast send error: %v", err)
+			h.unlock(conn)
 
 			if err != nil {
 				log.Printf("failed to write to a websocket: %v", err)
@@ -97,9 +95,7 @@ func (h *Hub) HandleWS(w http.ResponseWriter, r *http.Request) {
 	defer h.Remove(conn)
 
 	for {
-		h.lock(conn)
 		mt, msg, err := conn.ReadMessage()
-		h.unlock(conn)
 		if err != nil {
 			log.Printf("failed to read from websocket: %v", err)
 			return
