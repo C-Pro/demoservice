@@ -26,7 +26,7 @@ func Run(ctx context.Context, db *sql.DB) error {
 		w.Write([]byte("Hello, webservice!"))
 	})
 
-	hub := ws.NewHub()
+	hub := ws.NewHub(ctx)
 	mux.HandleFunc("/ws", hub.HandleWS)
 	mux.HandleFunc("/broadcast", hub.HandleBroadcast)
 
